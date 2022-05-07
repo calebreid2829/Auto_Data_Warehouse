@@ -13,3 +13,6 @@ warehouse/*
 *.parquet
 *.crc
 *.cache
+.bsp/sbt.json
+.idea/modules/Warehouse_Setup-build.iml
+.idea/sbt.xml
