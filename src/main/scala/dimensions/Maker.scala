@@ -6,11 +6,10 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 class Maker(private val spark:SparkSession){
   import spark.implicits._
   private var df: DataFrame = Seq.empty[Boolean].toDF()
-  private var fact: DataFrame = Seq.empty[Boolean].toDF("empty")
 
   def this(spark:SparkSession,df:DataFrame){
     this(spark)
-    this.df = Formatter.format(df)
+    setDF(df)
   }
   def this(spark:SparkSession,options:Map[String,String]){
     this(spark)
@@ -19,35 +18,64 @@ class Maker(private val spark:SparkSession){
         .option("delimiter",",")
         .option("infer.schema","true")
         .load(options("path"))
-      df = Formatter.format(tempdf)
+      setDF(tempdf)
   }
-
-  def setDimensions(numOfDimensions: Int, dimensions:Array[dimensionStruct]): Unit={
-    for(x <- 0 until numOfDimensions){
+  def setDimensions(dimensions:Array[dimensionStruct]): Unit={
+    for(x <- dimensions.indices){
       val dimension = dimensions(x)
+      var tempdf = Seq.empty[Boolean].toDF()
       dimension.name match{
-        case "time" => timeDimension(dimension)
+        case "time" => tempdf = timeDimension(dimension)
+        case _ => tempdf = anyDimension(dimension)
       }
-
+      val where = tempdf.columns.slice(0,tempdf.columns.length-1).map(x=>"d."+x+" == t."+x+" ")
+      val filteredColumns = (for(x<- df.columns.indices if !dimension.attr.contains(df.columns(x))) yield df.columns(x)).toArray
+      //val dfColumns = df.columns.map(x=>"d."+x)
+      tempdf.createOrReplaceTempView("temp")
+      val query = s"SELECT ${filteredColumns.mkString(",")}, ${dimension.name+"_id"} FROM df d " +
+        s"JOIN temp t ON ${where.mkString(" AND ")}"
+      setDF(spark.sql(query),format = false)
     }
   }
-  private def timeDimension(dimension: dimensionStruct): DataFrame={
-    val dimensionDF = df.select(dimension.attr.mkString(",")).distinct()
-      .orderBy(asc("ObservationDate"))
-      .withColumn("time_id",monotonically_increasing_id())
-    dimensionDF.show()
+  def createFact(): Unit={
+    df.write
+      .mode("overwrite")
+      .parquet("fact")
+  }
+  def drop(column: String): Unit ={
+    setDF(df.drop(column.split(","):_*),format = false)
+  }
+  private def anyDimension(dimension: dimensionStruct): DataFrame={
+    val dimensionDF = df.select(dimension.attr(0),dimension.attr.slice(1,dimension.attr.length):_*)
+      .distinct()
+      .withColumn(dimension.name+"_id",monotonically_increasing_id())
+    dimensionDF.write
+      .mode("overwrite")
+      .option("header","true")
+      .option("delimiter",",")
+      .parquet(dimension.name)
     dimensionDF
   }
-  def setDF(df:DataFrame): Unit ={
-    this.df = Formatter.format(df)
+  private def timeDimension(dimension: dimensionStruct): DataFrame={
+    val dimensionDF = df.select(dimension.attr(0)).distinct()
+      .withColumn("time_id",monotonically_increasing_id())
+    dimensionDF.write
+      .mode("overwrite")
+      .option("header","true")
+      .option("delimiter",",")
+      .parquet("time")
+    dimensionDF
+  }
+  def setDF(df:DataFrame,format:Boolean =true): Unit ={
+    if(format) this.df = Formatter.format(df)
+    else this.df = df
+    this.df.createOrReplaceTempView("df")
   }
   def show(): Unit ={
     df.show()
     println("Schema: "+ df.schema)
     println("Columns: " + df.columns.mkString(","))
     println("Rows: " + df.count())
-
   }
-
 }
 case class dimensionStruct(name:String,attr: Array[String])

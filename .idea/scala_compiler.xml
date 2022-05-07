@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ScalaCompilerConfiguration">
-    <profile name="sbt 1" modules="Capstone_Project,warehouse_setup" />
+    <profile name="sbt 1" modules="Capstone_Project,Warehouse_Setup,warehouse_setup" />
   </component>
 </project>

@@ -16,14 +16,13 @@ object Main {
       .getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
     println("created spark session")
-
     val options = Map("format"->"csv","path"->"../files/covid_19_data.csv")
-
     val dim = dimensions.dimensionStruct("time",Array("ObservationDate"))
-
+    val dim2 = dimensions.dimensionStruct("location",Array("Country_Region","Province_State"))
     val maker = new Maker(spark,options)
-    maker.setDimensions(1,Array(dim))
-
+    maker.setDimensions(Array(dim,dim2))
+    maker.drop("SNo,Last_Update")
+    maker.createFact()
   }
 
 }
