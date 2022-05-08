@@ -18,7 +18,11 @@ class Maker(private val spark:SparkSession){
         .option("delimiter",",")
         .option("infer.schema","true")
         .load(options("path"))
-      setDF(tempdf)
+      if(options("filter").nonEmpty){
+        val filteredDF = tempdf.filter(options("filter"))
+        setDF(filteredDF)
+      }
+      else setDF(tempdf)
   }
   def setDimensions(dimensions:Array[dimensionStruct]): Unit={
     for(x <- dimensions.indices){
