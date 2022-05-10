@@ -1,0 +1,9 @@
+setup.py
+Data_Warehouse_Manager.egg-info/PKG-INFO
+Data_Warehouse_Manager.egg-info/SOURCES.txt
+Data_Warehouse_Manager.egg-info/dependency_links.txt
+Data_Warehouse_Manager.egg-info/top_level.txt
+clover/__init__.py
+clover/main.py
+clover/warehouse/__init__.py
+clover/warehouse/manager.py
