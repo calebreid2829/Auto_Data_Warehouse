@@ -28,5 +28,4 @@ object Main {
     maker.createFact()
     maker.show()
   }
-
 }
