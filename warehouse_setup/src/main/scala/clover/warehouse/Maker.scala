@@ -61,10 +61,18 @@ class Maker(private val spark:SparkSession){
 
   /**Writes the fact to disk
    */
-  def createFact(): Unit={
-    df.write
-      .mode("overwrite")
-      .parquet("fact")
+  def createFact(col: String=""): Unit={
+    if(col != ""){
+      df.write
+        .partitionBy(col)
+        .mode("overwrite")
+        .parquet("fact")
+    }
+    else {
+      df.write
+        .mode("overwrite")
+        .parquet("fact")
+    }
   }
 
   /**Drops the given column
@@ -82,7 +90,8 @@ class Maker(private val spark:SparkSession){
     val dimensionDF = df.select(dimension.attr(0),dimension.attr.slice(1,dimension.attr.length):_*)
       .distinct()
       .withColumn(dimension.name+"_id",monotonically_increasing_id())
-    dimensionDF.write
+    dimensionDF
+      .write
       .mode("overwrite")
       .option("header","true")
       .option("delimiter",",")

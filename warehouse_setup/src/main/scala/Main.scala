@@ -27,7 +27,7 @@ object Main {
     maker.show()
     maker.setDimensions(Array(dim,dim2),show=true)
     maker.drop("SNo,Last_Update")
-    maker.createFact()
+    maker.createFact("location_id")
     maker.show()
   }
 }

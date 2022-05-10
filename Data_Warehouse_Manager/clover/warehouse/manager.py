@@ -76,6 +76,4 @@ class Manager:
     def __clearTarget(self):
         self.__target = None
 
-    def valueToID(self, value):
-        return self.__target.filter()
 
